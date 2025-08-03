@@ -6,6 +6,8 @@ from .views import *
 from django.conf.urls.static import static
 from django.conf import settings
 
+from django.views.generic import RedirectView
+
 app_name = "post"
 
 default_router = routers.DefaultRouter(trailing_slash=False)
@@ -20,10 +22,8 @@ post_comment_router.register("comments", PostCommentViewSet, basename="comments"
 tag_router = routers.DefaultRouter(trailing_slash=False)
 tag_router.register("tags", TagViewSet, basename="tags")
 
-post_list_view = PostViewSet.as_view({'get': 'list'})
-
 urlpatterns = [
-    path("", post_list_view, name="root-post-list"),
+    path("", RedirectView.as_view(url="/posts", permanent=False)),
     path("", include(default_router.urls)), 
     path("", include(comment_router.urls)),
     path("posts/<int:post_id>/", include(post_comment_router.urls)),

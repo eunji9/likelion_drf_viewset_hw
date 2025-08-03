@@ -12,7 +12,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField("Tag", related_name="posts", blank=True)
-    click_num = models.PositiveSmallIntegerField(default=0)
+    like_cnt = models.PositiveIntegerField(default=0, editable=False)
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)

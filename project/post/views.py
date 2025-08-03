@@ -5,6 +5,7 @@ from .serializers import PostSerializer, TagSerializer, CommentSerializer, PostL
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from django.db.models import F  
 from rest_framework.decorators import action
 from django.views.generic import RedirectView
 
@@ -65,16 +66,22 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=False)
     def recommend(self, request):
         ran_post = self.get_queryset().order_by("?").first()
-        serializer = self.get_serializer(ran_post) #gpt 수정
+        ran_post_serializer = PostListSerializer(ran_post) 
         return Response(ran_post_serializer.data)
     
-    @action(methods=["GET"], detail=False)
-    def test(self, request, pk=None):
-        test_post = self.get_object()
-        test_post.click_num += 1
-        test_post.save(update_fields=["click_num"])
-        return Response()
-
+    @action(methods=["post"], detail=True) #좋아요 기능
+    def like(self, request, pk=None):
+        post = self.get_object()
+        post.like_cnt = F("like_cnt") + 1       # 동시 요청에도 안전
+        post.save(update_fields=["like_cnt"])
+        post.refresh_from_db(fields=["like_cnt"])
+        return Response({"id": post.id, "like_cnt": post.like_cnt})
+    
+    @action(methods=["GET"], detail=False, url_path="top-liked") #좋아요 상위 3개 출력 
+    def top_liked(self, request):
+        top_posts = self.get_queryset().order_by("-like_cnt", "-id")[:3]
+        return Response(PostListSerializer(top_posts, many=True).data) 
+    
 class CommentViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
